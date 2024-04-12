@@ -1,1 +1,8 @@
-//Este es un archivo de ejemplo de una ruta de Node.js. Reemplazar por otro archivo con rutas reales.
+import { Router } from 'express'
+import { SubastarController } from '../controllers/SubastarController.js';
+
+const router = Router()
+
+router.post('/add-subastar', SubastarController.add_subasta)
+
+export default router;
