@@ -1,11 +1,15 @@
 import express, { json } from 'express'
-import { templateRouter } from './routes/template.js' //--> !!!IMPORTANT!!! Siempre que importen un archivo extensión .js .Loquesea, siempre ponerlo en el path, ej -> './routes/template.js' --> el .js es la extensión 
+import routes from './routes/routes.js' // Importa el router
+import cors from "cors";
+import bodyParser from "body-parser";
 
 const app = express() // --> Iniciamos express
-app.use(json()) 
+app.use(express.json()) 
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors());
 app.disable('x-powered-by') // --> Deshabilitar el header x-powered-by
 
-app.use(templateRouter)
+app.use(routes)
 
 const PORT = process.env.PORT || 3000 // --> Usar la variable de entorno PORT, si no usar el port 3000
 
