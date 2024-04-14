@@ -87,5 +87,18 @@ export class crudSubastar {
             console.error('error al guardar la carta minima:', error)
         }
     }
+    
+    static async selectAllCartas(){
+        try{
 
+            const conn = await pool.getConnection();
+            console.log(conn);
+            const query = `SELECT * FROM CARTA_SUBASTA;`;
+            const cartas = await conn.query(query);
+            return cartas;
+
+        }catch (error){
+            console.error('error al obtener las cartas:', error)
+        }
+    }
 }
