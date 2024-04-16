@@ -12,4 +12,6 @@ export const pool = mariadb.createPool({
   port: PORT_BD,
 });
 
+console.log(PORT_BD, HOST_BD, PASSWORD_BD, DATABASE, USER_BD);
+
 export default pool;

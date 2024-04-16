@@ -58,4 +58,13 @@ export class SubastarController {
         }
     }
 
+    static async get_cartasSubasta(_req, res){
+        try{
+            const cartasSubasta = await crudSubastar.selectAllCartas();
+            res.status(200).json(cartasSubasta);
+        }catch (error){
+            console.error(':) error al obtener las cartas de la subasta:', error)
+        }
+    }
+
 }
