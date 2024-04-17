@@ -18,7 +18,7 @@ export class SubastarController {
       } = req.body;
 
       const credits = await axios.get(
-        `${HOST}:${PORT}/inventario/get-creditos/${ID_USUARIO}`
+        `${HOST}:${PORT}/inventario/get-creditos`
       );
 
       const cantidadCreditos = credits.data.CANTIDAD;
@@ -53,9 +53,19 @@ export class SubastarController {
   }
 
   static async get_cartasSubasta(_req, res) {
+    const { Type, creditos_min, creditos_max } = _req.query;
     try {
-      const cartasSubasta = await crudSubastar.selectAllCartas();
-      res.status(200).json(cartasSubasta);
+      if (Object.keys(_req.query).length === 0) {
+        const cartasSubasta = await crudSubastar.selectAllCartas();
+        res.status(200).json(cartasSubasta);
+      } else {
+        const cartasFiltradas = await crudSubastar.filterCards(
+          Type,
+          creditos_min,
+          creditos_max
+        );
+        res.status(200).json(cartasFiltradas);
+      }
     } catch (error) {
       console.error(":) error al obtener las cartas de la subasta:", error);
     }

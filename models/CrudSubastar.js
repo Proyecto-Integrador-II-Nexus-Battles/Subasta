@@ -95,12 +95,81 @@ export class crudSubastar {
   static async selectAllCartas() {
     try {
       const conn = await pool.getConnection();
-      console.log(conn);
       const query = `SELECT * FROM CARTA_SUBASTA;`;
       const cartas = await conn.query(query);
+      conn.release();
       return cartas;
+    } catch (error) {
+      console.error("error al obtener las cartas:", error);
+    } 
+  }
+
+  static async filterCards(Type, creditos_min, creditos_max) {
+    try {
+      let cardsWithTypes = await obtenerCardsConTipos();
+
+      cardsWithTypes = cardsWithTypes.filter((card) => {
+        return (
+          (!Type || card.Type.toLowerCase() === Type.toLowerCase()) &&
+          (!creditos_min || card.CREDITOS_MIN >= creditos_min) &&
+          (!creditos_max || card.CREDITOS_MAX <= creditos_max)
+        );
+      });
+
+      return cardsWithTypes;
+
     } catch (error) {
       console.error("error al obtener las cartas:", error);
     }
   }
+
+}
+
+async function obtenerCardsConTipos() {
+  try {
+    const tipos = await obtenerTipos();
+    const cartas = await crudSubastar.selectAllCartas();
+    const pruebasActualizadas = cartas.map((card) => {
+      const carta = cartas.find((c) => c.ID_CARTA === card.ID_CARTA);
+      const tipo = tipos.find((t) => t.hasOwnProperty(card.ID_CARTA));
+      return {
+        ...carta,
+        Type: tipo[carta.ID_CARTA],
+      };
+    });
+    return pruebasActualizadas;
+
+  } catch (error) {
+    console.error("Error al obtener pruebas con precios actualizados:", error);
+    throw error;
+  }
+}
+
+async function obtenerTipos() {
+  try {
+    const conn = await pool.getConnection();
+    const rows = await conn.query(`SELECT ID_CARTA FROM CARTA_SUBASTA;`);
+    const IDs = rows.map((row) => row.ID_CARTA);
+    const cardsResponse = await fetch(`${process.env.HOST}:${process.env.PORT}/inventario/getCardsByIDs`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ IDs }),
+      }
+    );
+    const cards = await cardsResponse.json();
+    const tipos = cards.map((item) => {
+      return {
+        [item._id]: item.TypeCard,
+      };
+    });
+    conn.release();
+    return tipos;
+  } catch (error) {
+    console.error("Error al obtener los tipos de las cartas:", error);
+    throw error;
+  }
+
 }
