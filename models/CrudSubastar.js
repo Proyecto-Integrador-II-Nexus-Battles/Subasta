@@ -104,6 +104,41 @@ export class crudSubastar {
     } 
   }
 
+
+  static async obtenerSubasta(IdSubasta){
+    try{
+      console.log(IdSubasta)
+      const conn = await pool.getConnection();
+      const query = `SELECT * FROM CARTA_SUBASTA WHERE ID = ?;`;
+      const subasta = await conn.query(query, [IdSubasta]);
+
+      //Obtener fecha de inicio y fin
+      const fecha = new Date( subasta[0].TIEMPO_INICIO);
+      const FECHA_INICIO = new Date(fecha).toLocaleDateString('es-ES');
+      const FECHA_FIN = new Date(fecha.setHours(fecha.getHours() + subasta[0].TIEMPO)).toLocaleDateString('es-ES');
+      subasta[0].FECHA_INICIO = FECHA_INICIO;
+      subasta[0].FECHA_FIN = FECHA_FIN;
+
+      //Obtener cartas max y mibn
+      const cartasMax = await obtenerCartasMaximas(subasta[0].CARTAS_MAX_ID);
+      if (cartasMax.length > 0) {
+        subasta[0].CARTAS_MAX = cartasMax[0].ID_CARTA;
+      }
+      const cartasMin = await obtenerCartasMinimas(subasta[0].CARTAS_MIN_ID);
+      if (cartasMin.length > 0) {
+        subasta[0].CARTAS_MIN = cartasMin[0].ID_CARTA;
+      }
+      
+      
+
+      conn.release();
+      return subasta;
+    }
+    catch (error){
+      console.error("error al obtener subasta:", error);
+    }
+  }
+
   static async filterCards(Type, creditos_min, creditos_max) {
     try {
       let cardsWithTypes = await obtenerCardsConTipos();
@@ -123,6 +158,33 @@ export class crudSubastar {
     }
   }
 
+}
+
+async function obtenerCartasMaximas(idMax){
+  try{
+    const conn = await pool.getConnection();
+    const query = `SELECT * FROM CARTAS_MAX WHERE ID = ?;`;
+    const cartas = await conn.query(query, [idMax]);
+    conn.release();
+    return cartas;
+
+  } catch (error){
+    console.error("Error al obtener cartas maximas:", error);
+    throw error;
+  }
+}
+
+async function obtenerCartasMinimas(idMin){
+  try{
+    const conn = await pool.getConnection();
+    const query = `SELECT * FROM CARTAS_MIN WHERE ID = ?;`;
+    const cartas = await conn.query(query, [idMin]); 
+    conn.release();
+    return cartas;
+  } catch (error){
+    console.error("Error al obtener cartas minimas:", error);
+    throw error;
+  }
 }
 
 async function obtenerCardsConTipos() {
@@ -171,5 +233,8 @@ async function obtenerTipos() {
     console.error("Error al obtener los tipos de las cartas:", error);
     throw error;
   }
+
+  
+  
 
 }

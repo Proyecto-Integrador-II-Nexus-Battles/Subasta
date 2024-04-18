@@ -70,4 +70,15 @@ export class SubastarController {
       console.error(":) error al obtener las cartas de la subasta:", error);
     }
   }
+
+  static async getSubasta(req, res) {
+    const { idSubasta } = req.params;
+    console.log(idSubasta);
+    try {
+      const subasta = await crudSubastar.obtenerSubasta(idSubasta);
+      res.status(200).json(subasta);
+    } catch (error) {
+      console.error("error al obtener la carta:", error);
+    }
+  }
 }
