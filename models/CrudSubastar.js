@@ -137,10 +137,12 @@ export class crudSubastar {
       }
       
       //obtener las pujas de la subasta
-      /*
+      
       const pujas = await obtenerPujas(IdSubasta);
       console.log(pujas);
-      */
+      if (pujas.length > 0) {
+        subasta[0].PUJAS = pujas;
+      }
       conn.release();
       return subasta;
     }
@@ -174,10 +176,9 @@ async function obtenerPujas(IdSubasta){
   try{
     const conn = await pool.getConnection();
     const query = `SELECT * FROM PUJA WHERE CARTA_SUBASTA_ID = ?;`;
-    const puja = await conn.query(query, [IdSubasta]);
+    const pujas = await conn.query(query, [IdSubasta]);
     conn.release();
-    return puja;
-    // /IDusuario
+    return pujas;
   }catch{
     console.error("Error al obtener pujas:", error);
     throw error;
@@ -214,8 +215,6 @@ async function obtenerCartasMaximas(idMax){
     const nombres = datos.map((dato) => dato.Name);
     return nombres;
     
-  
-
   } catch (error){
     console.error("Error al obtener cartas maximas:", error);
     throw error;
