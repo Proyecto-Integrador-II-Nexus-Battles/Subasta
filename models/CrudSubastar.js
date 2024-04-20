@@ -1,6 +1,7 @@
 import pool from "./BDconexion.js";
-import { HOST, PORT } from "../config.js";
+import { APP_PORT, HOST, PORT } from "../config.js";
 import axios from "axios";
+import e from "express";
 
 export class crudSubastar {
   static async INSERT_CARD_SUBASTA(
@@ -120,17 +121,26 @@ export class crudSubastar {
       subasta[0].FECHA_FIN = FECHA_FIN;
 
       //Obtener cartas max y mibn
-      const cartasMax = await obtenerCartasMaximas(subasta[0].CARTAS_MAX_ID);
+      const cartasMax = await obtenerCartasMaximas(subasta[0].ID);
+      console.log(cartasMax);
       if (cartasMax.length > 0) {
-        subasta[0].CARTAS_MAX = cartasMax[0].ID_CARTA;
+        subasta[0].CARTAS_MAX = cartasMax;
+      }else{
+        subasta[0].CARTAS_MAX = null;
       }
-      const cartasMin = await obtenerCartasMinimas(subasta[0].CARTAS_MIN_ID);
+      
+      const cartasMin = await obtenerCartasMinimas(subasta[0].ID);
       if (cartasMin.length > 0) {
-        subasta[0].CARTAS_MIN = cartasMin[0].ID_CARTA;
+        subasta[0].CARTAS_MIN = cartasMin;
+      }else{
+        subasta[0].CARTAS_MIN = null; 
       }
       
-      
-
+      //obtener las pujas de la subasta
+      /*
+      const pujas = await obtenerPujas(IdSubasta);
+      console.log(pujas);
+      */
       conn.release();
       return subasta;
     }
@@ -160,13 +170,51 @@ export class crudSubastar {
 
 }
 
+async function obtenerPujas(IdSubasta){
+  try{
+    const conn = await pool.getConnection();
+    const query = `SELECT * FROM PUJA WHERE CARTA_SUBASTA_ID = ?;`;
+    const puja = await conn.query(query, [IdSubasta]);
+    conn.release();
+    return puja;
+    // /IDusuario
+  }catch{
+    console.error("Error al obtener pujas:", error);
+    throw error;
+  }
+}
+
 async function obtenerCartasMaximas(idMax){
   try{
     const conn = await pool.getConnection();
-    const query = `SELECT * FROM CARTAS_MAX WHERE ID = ?;`;
+    let query = `SELECT * FROM CARTAS_MAX_has_CARTA_SUBASTA WHERE CARTA_SUBASTA_ID = ?;`;
     const cartas = await conn.query(query, [idMax]);
     conn.release();
-    return cartas;
+    let idCartas = cartas.map((carta) => carta.CARTAS_MAX_ID);
+    query = `SELECT * FROM CARTAS_MAX WHERE ID = ?;`;
+    const cartasMax = await Promise.all(idCartas.map(async (id) => {
+      return await conn.query(query, [id]);
+  }));
+  
+    idCartas = cartasMax.map(arr => {
+      return arr.map(obj => obj.ID_CARTA);
+    });
+    idCartas = idCartas.flat();
+    console.log(idCartas);
+
+    const conexionInventario = await fetch(`https://gateway.thenexusbattlesii.online:${APP_PORT}/inventario/getCardsByIDs`, {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+      },
+      body: JSON.stringify({IDs: idCartas}),
+    })
+
+    const datos = await conexionInventario.json();
+    const nombres = datos.map((dato) => dato.Name);
+    return nombres;
+    
+  
 
   } catch (error){
     console.error("Error al obtener cartas maximas:", error);
@@ -177,12 +225,37 @@ async function obtenerCartasMaximas(idMax){
 async function obtenerCartasMinimas(idMin){
   try{
     const conn = await pool.getConnection();
-    const query = `SELECT * FROM CARTAS_MIN WHERE ID = ?;`;
-    const cartas = await conn.query(query, [idMin]); 
+    let query = `SELECT * FROM CARTA_SUBASTA_has_CARTAS_MIN WHERE CARTA_SUBASTA_ID = ?;`;
+    const cartas = await conn.query(query, [idMin]);
     conn.release();
-    return cartas;
+    let idCartas = cartas.map((carta) => carta.CARTAS_MIN_ID);
+    query = `SELECT * FROM CARTAS_min WHERE ID = ?;`;
+    const cartasMin = await Promise.all(idCartas.map(async (id) => {
+      return await conn.query(query, [id]);
+  }));
+  
+    idCartas = cartasMin.map(arr => {
+      return arr.map(obj => obj.ID_CARTA);
+    });
+    idCartas = idCartas.flat();
+    console.log(idCartas);
+
+    const conexionInventario = await fetch(`https://gateway.thenexusbattlesii.online:${APP_PORT}/inventario/getCardsByIDs`, {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+      },
+      body: JSON.stringify({IDs: idCartas}),
+    })
+
+    const datos = await conexionInventario.json();
+    const nombres = datos.map((dato) => dato.Name);
+    return nombres;
+    
+  
+
   } catch (error){
-    console.error("Error al obtener cartas minimas:", error);
+    console.error("Error al obtener Minima:", error);
     throw error;
   }
 }
