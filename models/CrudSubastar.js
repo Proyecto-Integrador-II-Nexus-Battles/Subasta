@@ -142,6 +142,8 @@ export class crudSubastar {
       console.log(pujas);
       if (pujas.length > 0) {
         subasta[0].PUJAS = pujas;
+      }else{
+        subasta[0].PUJAS = null;
       }
       conn.release();
       return subasta;
@@ -178,6 +180,7 @@ async function obtenerPujas(IdSubasta){
     const query = `SELECT * FROM PUJA WHERE CARTA_SUBASTA_ID = ?;`;
     const pujas = await conn.query(query, [IdSubasta]);
     conn.release();
+    ///buscar_usuario
     return pujas;
   }catch{
     console.error("Error al obtener pujas:", error);
