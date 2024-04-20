@@ -17,7 +17,7 @@ app.disable("x-powered-by"); // --> Deshabilitar el header x-powered-by
 app.use("/subasta", routes);
 
 app.use(function (req, res, next) {
-  next(createError(404));
+  res.status(404).send("Route not found");
 });
 
 const options = {

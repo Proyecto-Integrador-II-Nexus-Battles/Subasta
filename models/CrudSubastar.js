@@ -9,38 +9,29 @@ export class crudSubastar {
     TIEMPO,
     CREDITOS_MIN,
     CREDITOS_MAX,
-    ID_CARD_MAX,
-    CANTIDAD_CARD_MAX,
-    ID_CARD_MIN,
-    CANTIDAD_CARD_MIN
+    CARTAS_MAXIMAS,
+    CARTAS_MINIMAS,
+    authorization
   ) {
     try {
-      const resultInsertCardMax = await this.INSERT_CARD_MAX(
-        ID_CARD_MAX,
-        CANTIDAD_CARD_MAX
-      );
-
-      const resultInsertCardMin = await this.INSERT_CARD_MIN(
-        ID_CARD_MIN,
-        CANTIDAD_CARD_MIN
-      );
-
-      const insertQuery = `
+      const insertQueryCartaSubasta = `
                 INSERT INTO CARTA_SUBASTA 
-                (ID_USUARIO, ID_CARTA, TIEMPO, TIEMPO_INICIO, CREDITOS_MIN, CREDITOS_MAX, CARTAS_MAX_ID, CARTAS_MIN_ID) 
+                (ID_USUARIO, ID_CARTA, TIEMPO, TIEMPO_INICIO, CREDITOS_MIN, CREDITOS_MAX)
                 VALUES 
-                (?, ?, ?, NOW(), ?, ?, ?, ?);
+                (?, ?, ?, NOW(), ?, ?);
               `;
 
-      const result = await pool.query(insertQuery, [
+      const result = await pool.query(insertQueryCartaSubasta, [
         Number(ID_USUARIO),
         ID_CARD,
         Number(TIEMPO),
         Number(CREDITOS_MIN),
         Number(CREDITOS_MAX),
-        Number(resultInsertCardMax),
-        Number(resultInsertCardMin),
       ]);
+
+      await this.INSERT_CARD_MAX(CARTAS_MAXIMAS, result.insertId);
+
+      await this.INSERT_CARD_MIN(CARTAS_MINIMAS, result.insertId);
 
       let CANTIDAD = 0;
       if (Number(TIEMPO) == 24) {
@@ -49,9 +40,19 @@ export class crudSubastar {
         CANTIDAD = 3;
       }
 
-      const delete_creditos = await axios.post(
+      const options = {
+        headers: {
+          Authorization: authorization,
+        },
+      };
+
+      await axios.post(
         `${HOST}:${PORT}/inventario/delete-creditos`,
-        { ID_USUARIO, CANTIDAD }
+        {
+          ID_USUARIO,
+          CANTIDAD,
+        },
+        options
       );
 
       return result;
@@ -60,35 +61,61 @@ export class crudSubastar {
     }
   }
 
-  static async INSERT_CARD_MAX(ID_CARD, CANTIDAD) {
+  static async INSERT_CARD_MAX(CARTAS_MAXIMAS, CARTA_SUBASTA_ID) {
     try {
-      const insertQuery = `
-            INSERT INTO CARTAS_MAX 
-            (ID_CARTA, CANTIDAD) 
-            VALUES 
-            (?, ?);
-          `;
+      const insertQueryCartasMax = `
+                INSERT INTO CARTAS_MAX
+                (ID_CARTA, CANTIDAD)
+                VALUES
+                (?, ?)`;
 
-      const result = await pool.query(insertQuery, [ID_CARD, Number(CANTIDAD)]);
-      return result.insertId;
+      const insertQueryCartasMaxSubasta = `
+                INSERT INTO CARTAS_MAX_has_CARTA_SUBASTA
+                (CARTAS_MAX_ID, CARTA_SUBASTA_ID)
+                VALUES
+                (?, ?)`;
+
+      CARTAS_MAXIMAS.forEach(async (carta) => {
+        const resultMaxSubasta = await pool.query(insertQueryCartasMax, [
+          carta.id,
+          carta.cantidad,
+        ]);
+        await pool.query(insertQueryCartasMaxSubasta, [
+          resultMaxSubasta.insertId,
+          CARTA_SUBASTA_ID,
+        ]);
+      });
     } catch (error) {
-      console.error("error al guardar la carta maxima:", error);
+      console.error("Error al guardar la carta maxima:", error);
     }
   }
 
-  static async INSERT_CARD_MIN(ID_CARD, CANTIDAD) {
+  static async INSERT_CARD_MIN(CARTAS_MINIMAS, CARTA_SUBASTA_ID) {
     try {
-      const insertQuery = `
-            INSERT INTO CARTAS_MIN 
-            (ID_CARTA, CANTIDAD) 
-            VALUES 
-            (?, ?);
-          `;
+      const insertQueryCartasMin = `
+                INSERT INTO CARTAS_MIN
+                (ID_CARTA, CANTIDAD)
+                VALUES
+                (?, ?)`;
 
-      const result = await pool.query(insertQuery, [ID_CARD, Number(CANTIDAD)]);
-      return result.insertId;
+      const insertQueryCartasMinSubasta = `
+                INSERT INTO CARTA_SUBASTA_has_CARTAS_MIN
+                (CARTAS_MIN_ID, CARTA_SUBASTA_ID)
+                VALUES
+                (?, ?)`;
+
+      CARTAS_MINIMAS.forEach(async (carta) => {
+        const resultMinSubasta = await pool.query(insertQueryCartasMin, [
+          carta.id,
+          carta.cantidad,
+        ]);
+        await pool.query(insertQueryCartasMinSubasta, [
+          resultMinSubasta.insertId,
+          CARTA_SUBASTA_ID,
+        ]);
+      });
     } catch (error) {
-      console.error("error al guardar la carta minima:", error);
+      console.error("Error al guardar la carta minima:", error);
     }
   }
 
@@ -101,7 +128,7 @@ export class crudSubastar {
       return cartas;
     } catch (error) {
       console.error("error al obtener las cartas:", error);
-    } 
+    }
   }
 
   static async filterCards(Type, creditos_min, creditos_max) {
@@ -117,12 +144,10 @@ export class crudSubastar {
       });
 
       return cardsWithTypes;
-
     } catch (error) {
       console.error("error al obtener las cartas:", error);
     }
   }
-
 }
 
 async function obtenerCardsConTipos() {
@@ -138,7 +163,6 @@ async function obtenerCardsConTipos() {
       };
     });
     return pruebasActualizadas;
-
   } catch (error) {
     console.error("Error al obtener pruebas con precios actualizados:", error);
     throw error;
@@ -150,7 +174,8 @@ async function obtenerTipos() {
     const conn = await pool.getConnection();
     const rows = await conn.query(`SELECT ID_CARTA FROM CARTA_SUBASTA;`);
     const IDs = rows.map((row) => row.ID_CARTA);
-    const cardsResponse = await fetch(`${process.env.HOST}:${process.env.PORT}/inventario/getCardsByIDs`,
+    const cardsResponse = await fetch(
+      `${process.env.HOST}:${process.env.PORT}/inventario/getCardsByIDs`,
       {
         method: "POST",
         headers: {
@@ -171,5 +196,4 @@ async function obtenerTipos() {
     console.error("Error al obtener los tipos de las cartas:", error);
     throw error;
   }
-
 }

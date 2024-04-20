@@ -6,19 +6,24 @@ export class SubastarController {
   static async add_subasta(req, res) {
     try {
       const {
-        ID_USUARIO,
+        IdUsuario,
         ID_CARD,
         TIEMPO,
         CREDITOS_MIN,
         CREDITOS_MAX,
-        ID_CARD_MAX,
-        CANTIDAD_CARD_MAX,
-        ID_CARD_MIN,
-        CANTIDAD_CARD_MIN,
+        CARTAS_MAXIMAS,
+        CARTAS_MINIMAS,
       } = req.body;
 
+      const options = {
+        headers: {
+          Authorization: req.headers.authorization,
+        },
+      };
+
       const credits = await axios.get(
-        `${HOST}:${PORT}/inventario/get-creditos`
+        `${HOST}:${PORT}/inventario/get-creditos`,
+        options
       );
 
       const cantidadCreditos = credits.data.CANTIDAD;
@@ -28,21 +33,22 @@ export class SubastarController {
         Number(credits) < 1 ||
         (Number(credits) > 1 && Number(credits) < 3 && Number(TIEMPO) == 48)
       ) {
-        res.status(200).json({ message: "No tiene créditos suficientes" });
+        return res
+          .status(309)
+          .json({ message: "No tiene créditos suficientes" });
       } else {
         try {
           await crudSubastar.INSERT_CARD_SUBASTA(
-            ID_USUARIO,
+            IdUsuario,
             ID_CARD,
             TIEMPO,
             CREDITOS_MIN,
             CREDITOS_MAX,
-            ID_CARD_MAX,
-            CANTIDAD_CARD_MAX,
-            ID_CARD_MIN,
-            CANTIDAD_CARD_MIN
+            CARTAS_MAXIMAS,
+            CARTAS_MINIMAS,
+            req.headers.authorization
           );
-          res.status(200).send("Subasta agregada correctamente");
+          return res.status(200).send("Subasta agregada correctamente");
         } catch (error) {
           console.error("error al guardar la subasta:", error);
         }
