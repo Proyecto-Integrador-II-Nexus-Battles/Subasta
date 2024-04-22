@@ -263,7 +263,7 @@ async function obtenerCartasMinimas(idMin){
       return arr.map(obj => obj.ID_CARTA);
     });
     idCartas = idCartas.flat();
-    console.log(idCartas);
+    console.log("Las cartas minimas son : ", idCartas);
 
     const conexionInventario = await fetch(`${HOST}:${APP_PORT}/inventario/getCardsByIDs`, {
       method: "POST",
@@ -274,7 +274,12 @@ async function obtenerCartasMinimas(idMin){
     })
 
     const datos = await conexionInventario.json();
+
+    console.log("Los datos de las cartas minimas son : ", datos);
+
     const nombres = datos.map((dato) => dato.Name);
+
+    console.log("Los nombres de las cartas minimas son : ", nombres);
     return nombres;
     
   
