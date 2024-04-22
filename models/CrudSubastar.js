@@ -199,24 +199,34 @@ async function obtenerCartasMaximas(idMax){
     const cartasMax = await Promise.all(idCartas.map(async (id) => {
       return await conn.query(query, [id]);
   }));
-  
-    idCartas = cartasMax.map(arr => {
-      return arr.map(obj => obj.ID_CARTA);
-    });
-    idCartas = idCartas.flat();
-    console.log(idCartas);
+
+  const IDs = cartasMax.map(arr => arr.map(obj => obj.ID_CARTA)).flat();
+  const cantidades = cartasMax.map(arr => arr.map(obj => obj.CANTIDAD)).flat();
+
 
     const conexionInventario = await fetch(`https://gateway.thenexusbattlesii.online:${APP_PORT}/inventario/getCardsByIDs`, {
       method: "POST",
       headers: {
           "Content-Type": "application/json",
       },
-      body: JSON.stringify({IDs: idCartas}),
+      body: JSON.stringify({IDs: IDs}),
     })
 
     const datos = await conexionInventario.json();
-    const nombres = datos.map((dato) => dato.Name);
-    return nombres;
+
+    
+    const cards = datos.map((dato) => {
+      return {
+        ID: dato._id,
+        NAME: dato.Name,
+        CANTIDAD: cantidades.shift()
+      };
+    });
+
+    
+    console.log("Los nombres de las cartas maximas son : ", cards);
+    return cards;
+    
     
   } catch (error){
     console.error("Error al obtener cartas maximas:", error);
@@ -236,28 +246,29 @@ async function obtenerCartasMinimas(idMin){
       return await conn.query(query, [id]);
   }));
   
-    idCartas = cartasMin.map(arr => {
-      return arr.map(obj => obj.ID_CARTA);
-    });
-    idCartas = idCartas.flat();
-    console.log("Las cartas minimas son : ", idCartas);
+    const IDs = cartasMin.map(arr => arr.map(obj => obj.ID_CARTA)).flat();
+    const cantidades = cartasMin.map(arr => arr.map(obj => obj.CANTIDAD)).flat();
 
     const conexionInventario = await fetch(`https://gateway.thenexusbattlesii.online:${APP_PORT}/inventario/getCardsByIDs`, {
       method: "POST",
       headers: {
           "Content-Type": "application/json",
       },
-      body: JSON.stringify({IDs: idCartas}),
+      body: JSON.stringify({IDs: IDs}),
     })
 
     const datos = await conexionInventario.json();
 
-    console.log("Los datos de las cartas minimas son : ", datos);
+    const cards = datos.map((dato) => {
+      return {
+        ID: dato._id,
+        NAME: dato.Name,
+        CANTIDAD: cantidades.shift()
+      };
+    });
 
-    const nombres = datos.map((dato) => dato.Name);
-
-    console.log("Los nombres de las cartas minimas son : ", nombres);
-    return nombres;
+    console.log("Los nombres de las cartas minimas son : ", cards);
+    return cards;
     
   
 
