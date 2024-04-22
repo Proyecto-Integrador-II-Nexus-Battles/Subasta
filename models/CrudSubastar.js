@@ -177,11 +177,34 @@ export class crudSubastar {
 async function obtenerPujas(IdSubasta){
   try{
     const conn = await pool.getConnection();
+    const datos = [];
     const query = `SELECT * FROM PUJA WHERE CARTA_SUBASTA_ID = ?;`;
     const pujas = await conn.query(query, [IdSubasta]);
     conn.release();
     ///buscar_usuario
+    const idUsuarios = pujas.map((puja) => puja.ID_USUARIO);
+    console.log(idUsuarios);
+    for (const idUsuario of idUsuarios) {
+      const conexionUsuarios = await fetch(`${HOST}:${APP_PORT}/usuario/cuenta`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({IdUsuario: idUsuario}),
+      });
+    
+      // Aquí puedes manejar la respuesta de la solicitud para cada ID de usuario
+      const datosUsuario = await conexionUsuarios.json();
+
+      datos.push(datosUsuario);
+  
+      };
+      for(let i = 0; i < pujas.length; i++) {
+        pujas[i].USERNAME = datos[i].username;
+      }
+      
     return pujas;
+
   }catch{
     console.error("Error al obtener pujas:", error);
     throw error;
@@ -206,7 +229,7 @@ async function obtenerCartasMaximas(idMax){
     idCartas = idCartas.flat();
     console.log(idCartas);
 
-    const conexionInventario = await fetch(`https://gateway.thenexusbattlesii.online:${APP_PORT}/inventario/getCardsByIDs`, {
+    const conexionInventario = await fetch(`${HOST}:${APP_PORT}/inventario/getCardsByIDs`, {
       method: "POST",
       headers: {
           "Content-Type": "application/json",
@@ -231,7 +254,7 @@ async function obtenerCartasMinimas(idMin){
     const cartas = await conn.query(query, [idMin]);
     conn.release();
     let idCartas = cartas.map((carta) => carta.CARTAS_MIN_ID);
-    query = `SELECT * FROM CARTAS_min WHERE ID = ?;`;
+    query = `SELECT * FROM CARTAS_MIN WHERE ID = ?;`;
     const cartasMin = await Promise.all(idCartas.map(async (id) => {
       return await conn.query(query, [id]);
   }));
@@ -242,7 +265,7 @@ async function obtenerCartasMinimas(idMin){
     idCartas = idCartas.flat();
     console.log(idCartas);
 
-    const conexionInventario = await fetch(`https://gateway.thenexusbattlesii.online:${APP_PORT}/inventario/getCardsByIDs`, {
+    const conexionInventario = await fetch(`${HOST}:${APP_PORT}/inventario/getCardsByIDs`, {
       method: "POST",
       headers: {
           "Content-Type": "application/json",
