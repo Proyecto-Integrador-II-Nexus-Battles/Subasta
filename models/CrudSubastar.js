@@ -177,11 +177,34 @@ export class crudSubastar {
 async function obtenerPujas(IdSubasta){
   try{
     const conn = await pool.getConnection();
+    const datos = [];
     const query = `SELECT * FROM PUJA WHERE CARTA_SUBASTA_ID = ?;`;
     const pujas = await conn.query(query, [IdSubasta]);
     conn.release();
     ///buscar_usuario
+    const idUsuarios = pujas.map((puja) => puja.ID_USUARIO);
+    console.log(idUsuarios);
+    for (const idUsuario of idUsuarios) {
+      const conexionUsuarios = await fetch(`${HOST}:${APP_PORT}/usuario/cuenta`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({IdUsuario: idUsuario}),
+      });
+    
+      // Aquí puedes manejar la respuesta de la solicitud para cada ID de usuario
+      const datosUsuario = await conexionUsuarios.json();
+
+      datos.push(datosUsuario);
+  
+      };
+      for(let i = 0; i < pujas.length; i++) {
+        pujas[i].USERNAME = datos[i].username;
+      }
+      
     return pujas;
+
   }catch{
     console.error("Error al obtener pujas:", error);
     throw error;
@@ -204,7 +227,7 @@ async function obtenerCartasMaximas(idMax){
   const cantidades = cartasMax.map(arr => arr.map(obj => obj.CANTIDAD)).flat();
 
 
-    const conexionInventario = await fetch(`https://gateway.thenexusbattlesii.online:${APP_PORT}/inventario/getCardsByIDs`, {
+    const conexionInventario = await fetch(`${HOST}:${APP_PORT}/inventario/getCardsByIDs`, {
       method: "POST",
       headers: {
           "Content-Type": "application/json",
@@ -249,7 +272,7 @@ async function obtenerCartasMinimas(idMin){
     const IDs = cartasMin.map(arr => arr.map(obj => obj.ID_CARTA)).flat();
     const cantidades = cartasMin.map(arr => arr.map(obj => obj.CANTIDAD)).flat();
 
-    const conexionInventario = await fetch(`https://gateway.thenexusbattlesii.online:${APP_PORT}/inventario/getCardsByIDs`, {
+    const conexionInventario = await fetch(`${HOST}:${APP_PORT}/inventario/getCardsByIDs`, {
       method: "POST",
       headers: {
           "Content-Type": "application/json",
