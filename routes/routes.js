@@ -7,7 +7,7 @@ const router = Router();
 router.post("/add-subastar", SubastarController.add_subasta);
 router.get("/get-cartas-subasta", SubastarController.get_cartasSubasta);
 // ?  <--BUZON-->
-router.post("/buzon", BuzonController.getData);
+router.get("/buzon", BuzonController.getData);
 router.post("/buzon/claim", BuzonController.claimAssets);
 router.post("/buzon/add", BuzonController.setData);
 
