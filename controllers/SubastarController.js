@@ -81,4 +81,15 @@ export class SubastarController {
       console.error("error al obtener la carta:", error);
     }
   }
+
+  
+  static async deleteSubasta(req, res) {
+    const { idSubasta } = req.params;
+    try {
+      await crudSubastar.DELETE_SUBASTA(idSubasta);
+      res.status(200).send("Subasta eliminada correctamente");
+    } catch (error) {
+      console.error("error al eliminar la subasta:", error);
+    }
+  }
 }

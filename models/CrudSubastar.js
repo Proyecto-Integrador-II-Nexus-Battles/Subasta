@@ -93,6 +93,41 @@ export class crudSubastar {
     }
   }
 
+  static async DELETE_SUBASTA(ID_SUBASTA) {
+    try {
+      const conn = await pool.getConnection();
+      
+      const query = 
+      `DELETE CARTAS_MAX_has_CARTA_SUBASTA, CARTAS_MAX
+      FROM CARTAS_MAX_has_CARTA_SUBASTA
+      JOIN CARTAS_MAX 
+      ON CARTAS_MAX_has_CARTA_SUBASTA.CARTAS_MAX_ID = CARTAS_MAX.ID 
+      WHERE CARTAS_MAX_has_CARTA_SUBASTA.CARTA_SUBASTA_ID = ?;
+      ;`
+      ;
+      let result = await conn.query(query, [Number(ID_SUBASTA)]);
+
+      const query2 = `DELETE CARTA_SUBASTA_has_CARTAS_MIN, CARTAS_MIN
+      FROM CARTA_SUBASTA_has_CARTAS_MIN
+      JOIN CARTAS_MIN
+      ON CARTA_SUBASTA_has_CARTAS_MIN.CARTAS_MIN_ID = CARTAS_MIN.ID 
+      WHERE CARTA_SUBASTA_has_CARTAS_MIN.CARTA_SUBASTA_ID = ?;
+      ;`
+      ;
+
+      result = await conn.query(query2, [Number(ID_SUBASTA)]);
+
+      const query3 = `DELETE PUJA_has_CARTAS_PUJA, CARTAS_PUJA
+      FROM PUJA_has_CARTAS_PUJA
+      JOIN CARTAS_PUJA ON PUJA_has_CARTAS_PUJA.CARTAS_PUJA_ID = CARTAS_PUJA.ID
+      WHERE (SELECT ID FROM puja WHERE CARTA_SUBASTA_ID = 1) = PUJA_has_CARTAS_PUJA.PUJA_ID;`;
+      conn.release();
+      return result;
+    } catch (error) {
+      console.error("error al eliminar la subasta:", error);
+    }
+  }
+
   static async selectAllCartas() {
     try {
       const conn = await pool.getConnection();
