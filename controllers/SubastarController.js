@@ -1,4 +1,5 @@
 import { crudSubastar } from "../models/CrudSubastar.js";
+import { obtenerPujas } from "../models/CrudSubastar.js";
 import { HOST, PORT } from "../config.js";
 import axios from "axios";
 
@@ -72,9 +73,14 @@ export class SubastarController {
   }
 
   static async getSubasta(req, res) {
+    const pujar = req.query.bet;
     const { idSubasta } = req.params;
     console.log(idSubasta);
     try {
+      if(pujar==="bet"){
+        const pujas = await obtenerPujas(idSubasta);
+        return res.status(200).json(pujas);
+      }
       const subasta = await crudSubastar.obtenerSubasta(idSubasta);
       res.status(200).json(subasta);
     } catch (error) {
