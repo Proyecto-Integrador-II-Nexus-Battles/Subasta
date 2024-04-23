@@ -10,7 +10,6 @@ export const pool = mariadb.createPool({
   password: PASSWORD_BD,
   database: DATABASE,
   port: PORT_BD,
-  connectionLimit: 150,
 });
 
 console.log(PORT_BD, HOST_BD, PASSWORD_BD, DATABASE, USER_BD);
