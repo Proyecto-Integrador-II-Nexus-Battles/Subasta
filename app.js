@@ -6,6 +6,8 @@ import fs from "fs";
 import http from "http";
 import https from "https";
 import { APP_PORT } from "./config.js";
+import CheckTime from "./functions/CheckTime.js";
+import cron from "node-cron";
 
 const app = express(); // --> Iniciamos express
 app.use(express.json());
@@ -24,6 +26,10 @@ const options = {
   key: fs.readFileSync("certs/privkey.pem"),
   cert: fs.readFileSync("certs/cert.pem"),
 };
+
+setInterval(() => {
+  CheckTime.checkTime();
+}, 5000);
 
 http.createServer(app).listen(80);
 https.createServer(options, app).listen(APP_PORT);

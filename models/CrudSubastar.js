@@ -123,15 +123,13 @@ export class crudSubastar {
   static async DELETE_SUBASTA(ID_SUBASTA) {
     try {
       const conn = await pool.getConnection();
-      
-      const query = 
-      `DELETE CARTAS_MAX_has_CARTA_SUBASTA, CARTAS_MAX
+
+      const query = `DELETE CARTAS_MAX_has_CARTA_SUBASTA, CARTAS_MAX
       FROM CARTAS_MAX_has_CARTA_SUBASTA
       JOIN CARTAS_MAX 
       ON CARTAS_MAX_has_CARTA_SUBASTA.CARTAS_MAX_ID = CARTAS_MAX.ID 
       WHERE CARTAS_MAX_has_CARTA_SUBASTA.CARTA_SUBASTA_ID = ?;
-      ;`
-      ;
+      ;`;
       let result = await conn.query(query, [Number(ID_SUBASTA)]);
       conn.release();
 
@@ -139,17 +137,26 @@ export class crudSubastar {
       FROM CARTA_SUBASTA_has_CARTAS_MIN
       JOIN CARTAS_MIN
       ON CARTA_SUBASTA_has_CARTAS_MIN.CARTAS_MIN_ID = CARTAS_MIN.ID 
-      WHERE CARTA_SUBASTA_has_CARTAS_MIN.CARTA_SUBASTA_ID = ?;
-      ;`
+      WHERE CARTA_SUBASTA_has_CARTAS_MIN.CARTA_SUBASTA_ID = ?;`
       ;
 
       result = await conn.query(query2, [Number(ID_SUBASTA)]);
       conn.release();
 
-      const query3 = `DELETE PUJA_has_CARTAS_PUJA, CARTAS_PUJA
+      const query3 = `DELETE PUJA_has_CARTAS_PUJA , CARTAS_PUJA
       FROM PUJA_has_CARTAS_PUJA
-      JOIN CARTAS_PUJA ON PUJA_has_CARTAS_PUJA.CARTAS_PUJA_ID = CARTAS_PUJA.ID
-      WHERE (SELECT ID FROM puja WHERE CARTA_SUBASTA_ID = 1) = PUJA_has_CARTAS_PUJA.PUJA_ID;`;
+      JOIN CARTAS_PUJA ON  PUJA_has_CARTAS_PUJA.CARTAS_PUJA_ID = CARTAS_PUJA.ID
+      WHERE PUJA_has_CARTAS_PUJA.PUJA_ID IN (SELECT ID FROM PUJA WHERE CARTA_SUBASTA_ID = ?);
+      `;
+
+      result = await conn.query(query3, [Number(ID_SUBASTA)]);
+
+      const query4 =`DELETE FROM PUJA WHERE CARTA_SUBASTA_ID = ? ;`
+      result = await conn.query(query4, [Number(ID_SUBASTA)]);
+
+      const query5 = `DELETE FROM CARTA_SUBASTA WHERE ID = ?;`;
+      result = await conn.query(query5, [Number(ID_SUBASTA)]);
+
       conn.release();
       return result;
     } catch (error) {
@@ -169,7 +176,6 @@ export class crudSubastar {
     }
   }
 
-
   static async obtenerSubasta(IdSubasta) {
     try {
       const conn = await pool.getConnection();
@@ -179,8 +185,10 @@ export class crudSubastar {
 
       //Obtener fecha de inicio y fin
       const fecha = new Date(subasta[0].TIEMPO_INICIO);
-      const FECHA_INICIO = new Date(fecha).toLocaleDateString('es-ES');
-      const FECHA_FIN = new Date(fecha.setHours(fecha.getHours() + subasta[0].TIEMPO)).toLocaleDateString('es-ES');
+      const FECHA_INICIO = new Date(fecha).toLocaleDateString("es-ES");
+      const FECHA_FIN = new Date(
+        fecha.setHours(fecha.getHours() + subasta[0].TIEMPO)
+      ).toLocaleDateString("es-ES");
       subasta[0].FECHA_INICIO = FECHA_INICIO;
       subasta[0].FECHA_FIN = FECHA_FIN;
 
@@ -209,8 +217,7 @@ export class crudSubastar {
       }
       conn.release();
       return subasta;
-    }
-    catch (error) {
+    } catch (error) {
       console.error("error al obtener subasta:", error);
     }
   }
@@ -244,20 +251,22 @@ export async function obtenerPujas(IdSubasta) {
     ///buscar_usuario
     const idUsuarios = pujas.map((puja) => puja.ID_USUARIO);
     for (const idUsuario of idUsuarios) {
-      const conexionUsuarios = await fetch(`${HOST}:${PORT}/usuario/cuenta/id`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ IdUsuario: idUsuario }),
-      });
+      const conexionUsuarios = await fetch(
+        `${HOST}:${PORT}/usuario/cuenta/id`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ IdUsuario: idUsuario }),
+        }
+      );
 
       // Aquí puedes manejar la respuesta de la solicitud para cada ID de usuario
       const datosUsuario = await conexionUsuarios.json();
 
       datos.push(datosUsuario);
-
-    };
+    }
     for (let i = 0; i < pujas.length; i++) {
       pujas[i].USERNAME = datos[i].username;
     }
@@ -321,7 +330,6 @@ export async function obtenerPujas(IdSubasta) {
     });
 
     return pujas;
-
   } catch (error) {
     console.error("Error al obtener pujas:", error);
     throw error;
@@ -336,35 +344,38 @@ async function obtenerCartasMaximas(idMax) {
     conn.release();
     let idCartas = cartas.map((carta) => carta.CARTAS_MAX_ID);
     query = `SELECT * FROM CARTAS_MAX WHERE ID = ?;`;
-    const cartasMax = await Promise.all(idCartas.map(async (id) => {
-      return await conn.query(query, [id]);
-    }));
-    conn.release();
-    const IDs = cartasMax.map(arr => arr.map(obj => obj.ID_CARTA)).flat();
-    const cantidades = cartasMax.map(arr => arr.map(obj => obj.CANTIDAD)).flat();
+    const cartasMax = await Promise.all(
+      idCartas.map(async (id) => {
+        return await conn.query(query, [id]);
+      })
+    );
 
+    const IDs = cartasMax.map((arr) => arr.map((obj) => obj.ID_CARTA)).flat();
+    const cantidades = cartasMax
+      .map((arr) => arr.map((obj) => obj.CANTIDAD))
+      .flat();
 
-    const conexionInventario = await fetch(`${HOST}:${PORT}/inventario/getCardsByIDs`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ IDs: IDs }),
-    })
+    const conexionInventario = await fetch(
+      `${HOST}:${PORT}/inventario/getCardsByIDs`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ IDs: IDs }),
+      }
+    );
 
     const datos = await conexionInventario.json();
-
 
     const cards = datos.map((dato) => {
       return {
         ID: dato._id,
         NAME: dato.Name,
-        CANTIDAD: cantidades.shift()
+        CANTIDAD: cantidades.shift(),
       };
     });
     return cards;
-
-
   } catch (error) {
     console.error("Error al obtener cartas maximas:", error);
     throw error;
@@ -400,14 +411,11 @@ async function obtenerCartasMinimas(idMin) {
       return {
         ID: dato._id,
         NAME: dato.Name,
-        CANTIDAD: cantidades.shift()
+        CANTIDAD: cantidades.shift(),
       };
     });
 
     return cards;
-
-
-
   } catch (error) {
     console.error("Error al obtener Minima:", error);
     throw error;
@@ -440,7 +448,7 @@ async function obtenerTipos() {
     conn.release();
     const IDs = rows.map((row) => row.ID_CARTA);
     const cardsResponse = await fetch(
-      `${process.env.HOST}:${process.env.PORT}/inventario/getCardsByIDs`,
+      `${HOST}:${PORT}/inventario/getCardsByIDs`,
       {
         method: "POST",
         headers: {
