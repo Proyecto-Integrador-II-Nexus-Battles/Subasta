@@ -133,6 +133,7 @@ export class crudSubastar {
       ;`
       ;
       let result = await conn.query(query, [Number(ID_SUBASTA)]);
+      conn.release();
 
       const query2 = `DELETE CARTA_SUBASTA_has_CARTAS_MIN, CARTAS_MIN
       FROM CARTA_SUBASTA_has_CARTAS_MIN
@@ -143,6 +144,7 @@ export class crudSubastar {
       ;
 
       result = await conn.query(query2, [Number(ID_SUBASTA)]);
+      conn.release();
 
       const query3 = `DELETE PUJA_has_CARTAS_PUJA, CARTAS_PUJA
       FROM PUJA_has_CARTAS_PUJA
@@ -173,6 +175,7 @@ export class crudSubastar {
       const conn = await pool.getConnection();
       const query = `SELECT * FROM CARTA_SUBASTA WHERE ID = ?;`;
       const subasta = await conn.query(query, [IdSubasta]);
+      conn.release();
 
       //Obtener fecha de inicio y fin
       const fecha = new Date(subasta[0].TIEMPO_INICIO);
@@ -241,7 +244,7 @@ export async function obtenerPujas(IdSubasta) {
     ///buscar_usuario
     const idUsuarios = pujas.map((puja) => puja.ID_USUARIO);
     for (const idUsuario of idUsuarios) {
-      const conexionUsuarios = await fetch(`${HOST}:${APP_PORT}/usuario/cuenta`, {
+      const conexionUsuarios = await fetch(`${HOST}:${PORT}/usuario/cuenta`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -258,6 +261,53 @@ export async function obtenerPujas(IdSubasta) {
     for (let i = 0; i < pujas.length; i++) {
       pujas[i].USERNAME = datos[i].username;
     }
+
+    const pujaQuery = `SELECT * FROM PUJA_has_CARTAS_PUJA WHERE PUJA_ID = ?;`;
+
+    for (const element of pujas) {
+      const pujaId = element.ID;
+      const pujaResult = await pool.query(pujaQuery, [pujaId]);
+
+      if (pujaResult.length === 0) {
+        element.CARTAS_PUJA = null;
+        continue;
+      }
+
+      const cartasPujaIds = pujaResult.map((puja) => puja.CARTAS_PUJA_ID);
+
+      const cartasPujaQuery = `SELECT * FROM CARTAS_PUJA WHERE ID IN (?);`;
+      const cartasPujaResult = await pool.query(cartasPujaQuery, [cartasPujaIds]);
+      const cartasPuja = cartasPujaResult.map((cartaPuja) => {
+      return {
+        ID: cartaPuja.ID_CARTA,
+        CANTIDAD: cartaPuja.CANTIDAD
+      };
+      });
+
+      const IDs = cartasPuja.map((carta) => carta.ID);
+
+      const conexionInventario = await fetch(`${HOST}:${PORT}/inventario/getCardsByIDs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ IDs: IDs }),
+      })
+      const datos = await conexionInventario.json();
+
+      const cards = datos.map((dato) => {
+        const cartaPuja = cartasPuja.find((cartaPuja) => cartaPuja.ID === dato._id);
+        return {
+          ID: cartaPuja.ID,
+          NAME: dato.Name,
+          CANTIDAD: cartaPuja.CANTIDAD
+        };
+      });
+
+      element.CARTAS_PUJA = cards;
+    }
+
+    console.log(pujas);
 
     //ordenar pujas
     pujas.sort((a, b) => {
@@ -291,12 +341,12 @@ async function obtenerCartasMaximas(idMax) {
     const cartasMax = await Promise.all(idCartas.map(async (id) => {
       return await conn.query(query, [id]);
     }));
-
+    conn.release();
     const IDs = cartasMax.map(arr => arr.map(obj => obj.ID_CARTA)).flat();
     const cantidades = cartasMax.map(arr => arr.map(obj => obj.CANTIDAD)).flat();
 
 
-    const conexionInventario = await fetch(`${HOST}:${APP_PORT}/inventario/getCardsByIDs`, {
+    const conexionInventario = await fetch(`${HOST}:${PORT}/inventario/getCardsByIDs`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -334,11 +384,11 @@ async function obtenerCartasMinimas(idMin) {
     const cartasMin = await Promise.all(idCartas.map(async (id) => {
       return await conn.query(query, [id]);
     }));
-
+    conn.release();
     const IDs = cartasMin.map(arr => arr.map(obj => obj.ID_CARTA)).flat();
     const cantidades = cartasMin.map(arr => arr.map(obj => obj.CANTIDAD)).flat();
 
-    const conexionInventario = await fetch(`${HOST}:${APP_PORT}/inventario/getCardsByIDs`, {
+    const conexionInventario = await fetch(`${HOST}:${PORT}/inventario/getCardsByIDs`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -389,6 +439,7 @@ async function obtenerTipos() {
   try {
     const conn = await pool.getConnection();
     const rows = await conn.query(`SELECT ID_CARTA FROM CARTA_SUBASTA;`);
+    conn.release();
     const IDs = rows.map((row) => row.ID_CARTA);
     const cardsResponse = await fetch(
       `${process.env.HOST}:${process.env.PORT}/inventario/getCardsByIDs`,
