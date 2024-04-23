@@ -244,7 +244,7 @@ export async function obtenerPujas(IdSubasta) {
     ///buscar_usuario
     const idUsuarios = pujas.map((puja) => puja.ID_USUARIO);
     for (const idUsuario of idUsuarios) {
-      const conexionUsuarios = await fetch(`${HOST}:${PORT}/usuario/cuenta`, {
+      const conexionUsuarios = await fetch(`${HOST}:${PORT}/usuario/cuenta/id`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -324,7 +324,7 @@ export async function obtenerPujas(IdSubasta) {
 
     return pujas;
 
-  } catch {
+  } catch (error) {
     console.error("Error al obtener pujas:", error);
     throw error;
   }
