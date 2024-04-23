@@ -5,7 +5,7 @@ export class BuzonModel {
   static async getData(IdUsuario) {
     const existingAssets = [];
     const results = await pool.query(
-      "SELECT ID, ID_CARTA, CANTIDAD FROM BUZON B, CARTA_BUZON CB WHERE ID_USUARIO = ? AND CB.ID = B.CARTA_BUZON_ID",
+      "SELECT B.ID, CB.ID_CARTA, CB.CANTIDAD FROM BUZON B, CARTA_BUZON CB WHERE ID_USUARIO = ? AND CB.ID = B.CARTA_BUZON_ID",
       [IdUsuario]
     );
     const result2 = await pool.query(
