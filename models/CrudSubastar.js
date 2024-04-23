@@ -136,14 +136,25 @@ export class crudSubastar {
       FROM CARTA_SUBASTA_has_CARTAS_MIN
       JOIN CARTAS_MIN
       ON CARTA_SUBASTA_has_CARTAS_MIN.CARTAS_MIN_ID = CARTAS_MIN.ID 
-      WHERE CARTA_SUBASTA_has_CARTAS_MIN.CARTA_SUBASTA_ID = ?;
-      ;`;
+      WHERE CARTA_SUBASTA_has_CARTAS_MIN.CARTA_SUBASTA_ID = ?;`
+      ;
+
       result = await conn.query(query2, [Number(ID_SUBASTA)]);
 
-      const query3 = `DELETE PUJA_has_CARTAS_PUJA, CARTAS_PUJA
+      const query3 = `DELETE PUJA_has_CARTAS_PUJA , CARTAS_PUJA
       FROM PUJA_has_CARTAS_PUJA
-      JOIN CARTAS_PUJA ON PUJA_has_CARTAS_PUJA.CARTAS_PUJA_ID = CARTAS_PUJA.ID
-      WHERE (SELECT ID FROM puja WHERE CARTA_SUBASTA_ID = 1) = PUJA_has_CARTAS_PUJA.PUJA_ID;`;
+      JOIN CARTAS_PUJA ON  PUJA_has_CARTAS_PUJA.CARTAS_PUJA_ID = CARTAS_PUJA.ID
+      WHERE PUJA_has_CARTAS_PUJA.PUJA_ID IN (SELECT ID FROM PUJA WHERE CARTA_SUBASTA_ID = ?);
+      `;
+
+      result = await conn.query(query3, [Number(ID_SUBASTA)]);
+
+      const query4 =`DELETE FROM PUJA WHERE CARTA_SUBASTA_ID = ? ;`
+      result = await conn.query(query4, [Number(ID_SUBASTA)]);
+
+      const query5 = `DELETE FROM CARTA_SUBASTA WHERE ID = ?;`;
+      result = await conn.query(query5, [Number(ID_SUBASTA)]);
+
       conn.release();
       return result;
     } catch (error) {
