@@ -46,12 +46,12 @@ export class BuzonController {
       const result = await BuzonModel.claimAssets(IdUsuario, recompensaId);
       console.log(result);
       if (result) {
-        if (result.CREDITOS) {
+        if (result[0].CREDITOS) {
           axios
             .post(
               `${HOST}:${PORT}/inventario/add-creditos`,
               {
-                CANTIDAD: result.CREDITOS,
+                CANTIDAD: result[0].CREDITOS,
               },
               { headers: { Authorization: req.headers.authorization } }
             )
@@ -73,12 +73,12 @@ export class BuzonController {
                 .status(500)
                 .json({ message: "Error al reclamar las recompensas" });
             });
-        } else if (result.ID_CARTA) {
+        } else if (result[0].ID_CARTA) {
           const sendCards = [
             {
               ID_USUARIO: req.body.IdUsuario,
-              CARTA_ID: result.ID_CARTA,
-              CANTIDAD: result.CANTIDAD,
+              CARTA_ID: result[0].ID_CARTA,
+              CANTIDAD: result[0].CANTIDAD,
             },
           ];
           axios
