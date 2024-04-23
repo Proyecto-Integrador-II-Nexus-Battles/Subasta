@@ -92,10 +92,10 @@ export class BuzonModel {
         if (result[0].CREDITOS > 0) {
           await pool.query("DELETE FROM BUZON WHERE ID = ?", [recompensaId]);
         } else if (result[0].CARTA_BUZON_ID) {
+          await pool.query("DELETE FROM BUZON WHERE ID = ?", [recompensaId]);
           await pool.query("DELETE FROM CARTA_BUZON WHERE ID = ?", [
             result[0].CARTA_BUZON_ID,
           ]);
-          await pool.query("DELETE FROM BUZON WHERE ID = ?", [recompensaId]);
         }
       }
     } catch (error) {
