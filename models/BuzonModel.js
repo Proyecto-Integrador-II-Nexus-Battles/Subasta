@@ -1,11 +1,34 @@
+import e from "cors";
 import pool from "./BDconexion.js";
 
 export class BuzonModel {
   static async getData(IdUsuario) {
-    const existingAssets = await pool.query(
-      "SELECT * FROM BUZON B, CARTA_BUZON CB WHERE ID_USUARIO = ? AND CB.ID = B.CARTA_BUZON_ID",
+    const existingAssets = [];
+    const results = await pool.query(
+      "SELECT ID, ID_CARTA, CANTIDAD FROM BUZON B, CARTA_BUZON CB WHERE ID_USUARIO = ? AND CB.ID = B.CARTA_BUZON_ID",
       [IdUsuario]
     );
+    const result2 = await pool.query(
+      "SELECT ID, CREDITOS FROM BUZON WHERE ID_USUARIO = ? AND CREDITOS > 0",
+      [IdUsuario]
+    );
+    if (results.length > 0) {
+      results.forEach((result) => {
+        existingAssets.push({
+          ID: result.ID,
+          ID_CARTA: result.ID_CARTA,
+          CANTIDAD: result.CANTIDAD,
+        });
+      });
+    }
+    if (result2.length > 0) {
+      result2.forEach((result) => {
+        existingAssets.push({
+          ID: result.ID,
+          CREDITOS: result.CREDITOS,
+        });
+      });
+    }
     return existingAssets;
   }
 
@@ -23,7 +46,6 @@ export class BuzonModel {
             [IdUsuario, creditos, result.insertId]
           );
           console.log(result2);
-          return;
         });
       } else {
         const result = await pool.query(
@@ -39,11 +61,23 @@ export class BuzonModel {
 
   static async claimAssets(IdUsuario, recompensaId) {
     try {
+      const assets = [];
       const [result] = await pool.query(
-        "SELECT * FROM BUZON B, CARTA_BUZON CB WHERE ID_USUARIO = ? AND CB.ID = B.CARTA_BUZON_ID",
+        "SELECT * FROM BUZON WHERE ID = ? AND ID_USUARIO = ?",
         [recompensaId, IdUsuario]
       );
-      return result;
+      if (result) {
+        const [result2] = await pool.query(
+          "SELECT * FROM CARTA_BUZON CB WHERE ID = ?",
+          [result.CARTA_BUZON_ID]
+        );
+        if (result2) {
+          assets.push(result2);
+        } else {
+          assets.push(result);
+        }
+      }
+      return assets;
     } catch (error) {
       console.error("Error al eliminar el buzón:", error);
     }
@@ -51,7 +85,19 @@ export class BuzonModel {
 
   static async deleteAssets(recompensaId) {
     try {
-      await pool.query("DELETE FROM BUZON WHERE ID = ?", [recompensaId]);
+      const result = await pool.query("SELECT * FROM BUZON WHERE ID = ?", [
+        recompensaId,
+      ]);
+      if (result.length > 0) {
+        if (result[0].CREDITOS > 0) {
+          await pool.query("DELETE FROM BUZON WHERE ID = ?", [recompensaId]);
+        } else if (result[0].CARTA_BUZON_ID) {
+          await pool.query("DELETE FROM CARTA_BUZON WHERE ID = ?", [
+            result[0].CARTA_BUZON_ID,
+          ]);
+          await pool.query("DELETE FROM BUZON WHERE ID = ?", [recompensaId]);
+        }
+      }
     } catch (error) {
       console.error("Error al eliminar el buzón:", error);
     }
