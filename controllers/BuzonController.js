@@ -42,7 +42,9 @@ export class BuzonController {
   static async claimAssets(req, res) {
     try {
       const { IdUsuario, recompensaId } = req.body;
+      console.log(req.body);
       const result = await BuzonModel.claimAssets(IdUsuario, recompensaId);
+      console.log(result);
       if (result) {
         if (result.CREDITOS) {
           axios
@@ -105,6 +107,8 @@ export class BuzonController {
                 .json({ message: "Error al reclamar las recompensas" });
             });
         }
+      } else {
+        return res.status(404).json({ message: "Recompensa no encontrada" });
       }
     } catch (error) {
       console.error("Error al reclamar las recompensas:", error);
