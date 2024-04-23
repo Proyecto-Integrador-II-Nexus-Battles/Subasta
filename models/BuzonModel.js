@@ -39,7 +39,7 @@ export class BuzonModel {
         carta.forEach(async (carta) => {
           const result = await pool.query(
             "INSERT INTO CARTA_BUZON (ID_CARTA, CANTIDAD) VALUES (?,?)",
-            [carta.ID, carta.CANTIDAD]
+            [carta.ID_CARTA, carta.CANTIDAD]
           );
           const result2 = await pool.query(
             "INSERT INTO BUZON (ID_USUARIO, CREDITOS, CARTA_BUZON_ID) VALUES (?,?,?)",
