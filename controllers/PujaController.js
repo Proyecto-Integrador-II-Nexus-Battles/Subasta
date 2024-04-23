@@ -15,7 +15,6 @@ export class PujarController {
       );
 
       const cantidadCreditos = credits.data.CANTIDAD;
-      console.log("Créditos del usuario:", cantidadCreditos);
 
       if (
         Number(credits) < 1 ||

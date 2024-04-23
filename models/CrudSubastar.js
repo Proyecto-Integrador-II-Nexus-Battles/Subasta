@@ -307,8 +307,6 @@ export async function obtenerPujas(IdSubasta) {
       element.CARTAS_PUJA = cards;
     }
 
-    console.log(pujas);
-
     //ordenar pujas
     pujas.sort((a, b) => {
       if (a.CREDITOS === b.CREDITOS) {
