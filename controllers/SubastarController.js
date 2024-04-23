@@ -28,7 +28,6 @@ export class SubastarController {
       );
 
       const cantidadCreditos = credits.data.CANTIDAD;
-      console.log("Créditos del usuario:", cantidadCreditos);
 
       if (
         Number(credits) < 1 ||
