@@ -75,7 +75,6 @@ export class SubastarController {
   static async getSubasta(req, res) {
     const pujar = req.query.bet;
     const { idSubasta } = req.params;
-    console.log(idSubasta);
     try {
       if(pujar==="bet"){
         const pujas = await obtenerPujas(idSubasta);
