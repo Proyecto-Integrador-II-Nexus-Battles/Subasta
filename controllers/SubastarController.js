@@ -1,4 +1,5 @@
 import { crudSubastar } from "../models/CrudSubastar.js";
+import { obtenerPujas } from "../models/CrudSubastar.js";
 import { HOST, PORT } from "../config.js";
 import axios from "axios";
 
@@ -74,6 +75,32 @@ export class SubastarController {
       }
     } catch (error) {
       console.error(":) error al obtener las cartas de la subasta:", error);
+    }
+  }
+
+  static async getSubasta(req, res) {
+    const pujar = req.query.bet;
+    const { idSubasta } = req.params;
+    try {
+      if(pujar==="bet"){
+        const pujas = await obtenerPujas(idSubasta);
+        return res.status(200).json(pujas);
+      }
+      const subasta = await crudSubastar.obtenerSubasta(idSubasta);
+      res.status(200).json(subasta);
+    } catch (error) {
+      console.error("error al obtener la carta:", error);
+    }
+  }
+
+  
+  static async deleteSubasta(req, res) {
+    const { idSubasta } = req.params;
+    try {
+      await crudSubastar.DELETE_SUBASTA(idSubasta);
+      res.status(200).send("Subasta eliminada correctamente");
+    } catch (error) {
+      console.error("error al eliminar la subasta:", error);
     }
   }
 }
