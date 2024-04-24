@@ -56,13 +56,22 @@ export class crudSubastar {
         options
       );
 
-      await axios.delete(`${HOST}:${PORT}/inventario/delete-card`, {
-        data: {
-          ID_USUARIO: ID_USUARIO,
-          CARTA_ID: ID_CARD,
-        },
-        options,
-      });
+      const response = await axios.delete(
+        `${HOST}:${PORT}/inventario/delete-card`,
+        {
+          data: {
+            data: {
+              ID_USUARIO: ID_USUARIO,
+              CARTA_ID: ID_CARD,
+            },
+          },
+          headers: {
+            Authorization: authorization,
+          },
+        }
+      );
+
+      console.log("response", response);
 
       return result;
     } catch (error) {
