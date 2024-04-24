@@ -1,3 +1,4 @@
+import { HOST, PORT } from "../config.js";
 import pool from "../models/BDconexion.js";
 import axios from "axios";
 
@@ -88,7 +89,31 @@ export default class CheckTime {
             console.error("Error al obtener las pujas de la subasta:", error);
           });
         await axios.get(`/subasta/deleteSubasta/${ID}`);
+        await this.sendMail(ID_CARTA, ID_USUARIO);
       });
+    }
+  }
+  static async sendMail(ID_CARTA, ID_USUARIO) {
+    try {
+      const userInfo = await axios.get(
+        `${HOST}:${PORT}/usuario/user/id/${ID_USUARIO}`
+      );
+      const cartaInfo = await axios.post(
+        `${HOST}:${PORT}/inventario/getCardsByIDs`,
+        { IDs: [ID_CARTA] }
+      );
+      const carta = cartaInfo.data[0];
+      const user = userInfo.data;
+      await axios.post(`${HOST}:${PORT}/correo/send/subasta`, {
+        email: user.email,
+        username: user.username,
+        subject: "Subasta finalizada",
+        message: "Has ganado las cartas de la subasta. ¡Felicidades!",
+        cardname: carta.Name,
+        image: carta.imagePath,
+      });
+    } catch (error) {
+      console.error("Error al enviar el correo de subasta:", error);
     }
   }
 }
