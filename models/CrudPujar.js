@@ -10,7 +10,7 @@ export class crudPujar {
             const queryPuja = `INSERT INTO PUJA (ID_USUARIO, CREDITOS, CARTA_SUBASTA_ID) VALUES (?, ?, ?);`;
 
             const result = await pool.query(queryPuja, [
-                Number(IdUsuario) || 9,
+                Number(IdUsuario),
                 Number(creditos_pujados),
                 Number(id_subasta),
             ]);
