@@ -25,10 +25,7 @@ export class CompraController {
                     console.log("Carta del ganador agregada al buzon correctamente");
                     axios.get(`/subasta/getSubasta/${ID_SUBASTA}`)
                         .then((response) => {
-                            console.log("si entro")
                             datos = response.data;
-                            console.log("DATOS:", datos)
-                            console.log("ID_USUARIO:",datos[0].ID_USUARIO)
                             axios
                                 .post("/subasta/buzon/add", {
                                     IdUsuario: datos[0].ID_USUARIO,
@@ -41,6 +38,8 @@ export class CompraController {
                                     console.error("Error al agregar los creditos al buzon del subastador:", error);
                                 });
                             if (datos[0].CARTAS_MAX !== null) {
+                                const cartas = [];
+                                const cartica = [];
                                 datos[0].CARTAS_MAX.forEach((carta) => {
                                     axios
                                         .post("/subasta/buzon/add", {
@@ -49,12 +48,31 @@ export class CompraController {
                                         })
                                         .then(() => {
                                             console.log("Carta agregada al buzon correctamente Maximas");
+                                            cartica.push({
+                                                CARTA_ID: carta.ID,
+                                                CANTIDAD: carta.CANTIDAD,
+                                            })
+                                            console.log("cartica", cartica)
+                                            axios.delete(
+                                                `${HOST}:${PORT}/inventario/delete/cards`,
+                                                {
+                                                    data:
+                                                        { CARTAS: cartica },
+                                                    headers: {
+                                                        Authorization: req.headers.authorization,
+                                                    }
+                                                }).then((response) => {
+                                                    console.log("Carta eliminada correctamente, respuesta:", response)
+                                                }).catch((error) => {
+                                                    console.error("Error al eliminar carta:", error);
+                                                });
                                         })
                                         .catch((error) => {
                                             console.error("Error al agregar carta al buzon:", error);
                                         });
                                 });
-                            } 
+                            }
+                           
                             axios.post(
                                 `${HOST}:${PORT}/inventario/delete-creditos`,
                                 {
@@ -63,27 +81,28 @@ export class CompraController {
                                 },
                                 options
                             )
-                            .then((response) => {
-                                if(response.status === 200){
-                                console.log("Creditos eliminados correctamente");
-                                axios.get(`/subasta/deleteSubasta/${ID_SUBASTA}`)
-                                .then(() => {
-                                    console.log("Subasta eliminada correctamente");
-                                    res.status(200).send("Compra realizada correctamente");
+                                .then((response) => {
+                                    if (response.status === 200) {
+                                        console.log("Creditos eliminados correctamente");
+                                        axios.get(`/subasta/deleteSubasta/${ID_SUBASTA}`)
+                                            .then(() => {
+                                                console.log("Subasta eliminada correctamente");
+                                                res.status(200).send("Compra realizada correctamente");
+                                            })
+                                            .catch((error) => {
+                                                console.error("Error al eliminar la subasta:", error);
+                                            });
+                                    }
                                 })
-                                .catch((error) => {
-                                    console.error("Error al eliminar la subasta:", error);
-                                });
-                            }
-                          
-                            })  
+s
+                            
                         })
-                .catch((error) => {
-                    console.error("Error al agregar carta al buzon:", error);
+                        .catch((error) => {
+                            console.error("Error al agregar carta al buzon:", error);
+                        });
                 });
-            });
-           
-         
+
+
 
         } catch (error) {
             // Manejo de errores
