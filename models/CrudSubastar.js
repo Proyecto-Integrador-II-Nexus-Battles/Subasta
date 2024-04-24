@@ -61,6 +61,7 @@ export class crudSubastar {
           ID_USUARIO: ID_USUARIO,
           CARTA_ID: ID_CARD,
         },
+        options,
       });
 
       return result;
