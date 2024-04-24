@@ -7,9 +7,8 @@ export class CompraController {
     static async enviarCompra(req, res) {
         try {
             const { IdUsuario, ID_SUBASTA } = req.body;
-
+            console.log("IdUsuario:", IdUsuario);
             const ID_CARTA = await pool.query('SELECT ID_CARTA FROM CARTA_SUBASTA WHERE ID = ?', [ID_SUBASTA]);
-            console.log(ID_CARTA);
             axios
                 .post("/subasta/buzon/add", {
                     IdUsuario: IdUsuario,
@@ -21,6 +20,8 @@ export class CompraController {
                         .then((res) => {
                             console.log("si entro")
                             const datos = res.data;
+            
+                            console.log("ID_USUARIO:",datos[0].ID_USUARIO)
                             axios
                                 .post("/subasta/buzon/add", {
                                     IdUsuario: datos[0].ID_USUARIO,
