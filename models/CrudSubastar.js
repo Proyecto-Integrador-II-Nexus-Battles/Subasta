@@ -1,5 +1,5 @@
 import pool from "./BDconexion.js";
-import { APP_PORT, HOST, PORT } from "../config.js";
+import { HOST, PORT } from "../config.js";
 import axios from "axios";
 import e from "express";
 
@@ -56,9 +56,16 @@ export class crudSubastar {
         options
       );
 
+      await axios.delete(`${HOST}:${PORT}/inventario/delete-card`, {
+        data: {
+          ID_USUARIO: ID_USUARIO,
+          CARTA_ID: ID_CARD,
+        },
+      });
+
       return result;
     } catch (error) {
-      console.error("error al guardar la subasta:", error);
+      console.error("Error al guardar la subasta:", error);
     }
   }
 
@@ -137,9 +144,7 @@ export class crudSubastar {
       FROM CARTA_SUBASTA_has_CARTAS_MIN
       JOIN CARTAS_MIN
       ON CARTA_SUBASTA_has_CARTAS_MIN.CARTAS_MIN_ID = CARTAS_MIN.ID 
-      WHERE CARTA_SUBASTA_has_CARTAS_MIN.CARTA_SUBASTA_ID = ?;`
-      ;
-
+      WHERE CARTA_SUBASTA_has_CARTAS_MIN.CARTA_SUBASTA_ID = ?;`;
       result = await conn.query(query2, [Number(ID_SUBASTA)]);
       conn.release();
 
@@ -151,7 +156,7 @@ export class crudSubastar {
 
       result = await conn.query(query3, [Number(ID_SUBASTA)]);
 
-      const query4 =`DELETE FROM PUJA WHERE CARTA_SUBASTA_ID = ? ;`
+      const query4 = `DELETE FROM PUJA WHERE CARTA_SUBASTA_ID = ? ;`;
       result = await conn.query(query4, [Number(ID_SUBASTA)]);
 
       const query5 = `DELETE FROM CARTA_SUBASTA WHERE ID = ?;`;
@@ -285,31 +290,38 @@ export async function obtenerPujas(IdSubasta) {
       const cartasPujaIds = pujaResult.map((puja) => puja.CARTAS_PUJA_ID);
 
       const cartasPujaQuery = `SELECT * FROM CARTAS_PUJA WHERE ID IN (?);`;
-      const cartasPujaResult = await pool.query(cartasPujaQuery, [cartasPujaIds]);
+      const cartasPujaResult = await pool.query(cartasPujaQuery, [
+        cartasPujaIds,
+      ]);
       const cartasPuja = cartasPujaResult.map((cartaPuja) => {
-      return {
-        ID: cartaPuja.ID_CARTA,
-        CANTIDAD: cartaPuja.CANTIDAD
-      };
+        return {
+          ID: cartaPuja.ID_CARTA,
+          CANTIDAD: cartaPuja.CANTIDAD,
+        };
       });
 
       const IDs = cartasPuja.map((carta) => carta.ID);
 
-      const conexionInventario = await fetch(`${HOST}:${PORT}/inventario/getCardsByIDs`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ IDs: IDs }),
-      })
+      const conexionInventario = await fetch(
+        `${HOST}:${PORT}/inventario/getCardsByIDs`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ IDs: IDs }),
+        }
+      );
       const datos = await conexionInventario.json();
 
       const cards = datos.map((dato) => {
-        const cartaPuja = cartasPuja.find((cartaPuja) => cartaPuja.ID === dato._id);
+        const cartaPuja = cartasPuja.find(
+          (cartaPuja) => cartaPuja.ID === dato._id
+        );
         return {
           ID: cartaPuja.ID,
           NAME: dato.Name,
-          CANTIDAD: cartaPuja.CANTIDAD
+          CANTIDAD: cartaPuja.CANTIDAD,
         };
       });
 
@@ -390,20 +402,27 @@ async function obtenerCartasMinimas(idMin) {
     conn.release();
     let idCartas = cartas.map((carta) => carta.CARTAS_MIN_ID);
     query = `SELECT * FROM CARTAS_MIN WHERE ID = ?;`;
-    const cartasMin = await Promise.all(idCartas.map(async (id) => {
-      return await conn.query(query, [id]);
-    }));
+    const cartasMin = await Promise.all(
+      idCartas.map(async (id) => {
+        return await conn.query(query, [id]);
+      })
+    );
     conn.release();
-    const IDs = cartasMin.map(arr => arr.map(obj => obj.ID_CARTA)).flat();
-    const cantidades = cartasMin.map(arr => arr.map(obj => obj.CANTIDAD)).flat();
+    const IDs = cartasMin.map((arr) => arr.map((obj) => obj.ID_CARTA)).flat();
+    const cantidades = cartasMin
+      .map((arr) => arr.map((obj) => obj.CANTIDAD))
+      .flat();
 
-    const conexionInventario = await fetch(`${HOST}:${PORT}/inventario/getCardsByIDs`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ IDs: IDs }),
-    })
+    const conexionInventario = await fetch(
+      `${HOST}:${PORT}/inventario/getCardsByIDs`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ IDs: IDs }),
+      }
+    );
 
     const datos = await conexionInventario.json();
 

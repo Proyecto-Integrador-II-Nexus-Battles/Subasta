@@ -4,7 +4,7 @@ import axios from "axios";
 export default class CheckTime {
   static async checkTime() {
     const rows = await pool.query(
-      "SELECT ID, ID_CARTA, ID_USUARIO FROM CARTA_SUBASTA CS WHERE TIMESTAMPDIFF(HOUR, TIEMPO_INICIO, NOW()) >= 2;"
+      "SELECT ID, ID_CARTA, ID_USUARIO FROM CARTA_SUBASTA CS WHERE TIMESTAMPDIFF(HOUR, TIEMPO_INICIO, NOW()) >= TIEMPO;"
     );
     if (rows.length > 0) {
       rows.forEach(async (row) => {
@@ -13,7 +13,23 @@ export default class CheckTime {
           .get(`/subasta/getSubasta/${ID}?bet=bet`)
           .then((res) => {
             const pujas = res.data;
-            if (pujas.length === 0) return;
+            if (pujas.length === 0) {
+              axios
+                .post(`/subasta/buzon/add`, {
+                  IdUsuario: ID_USUARIO,
+                  carta: [{ ID_CARTA: ID_CARTA, CANTIDAD: 1 }],
+                })
+                .then(() => {
+                  axios.get(`/subasta/deleteSubasta/${ID}`);
+                })
+                .catch((error) => {
+                  console.error(
+                    "Error al agregar carta al buzon después de puja sin ofertas:",
+                    error
+                  );
+                });
+              return;
+            }
             axios
               .post("/subasta/buzon/add", {
                 IdUsuario: pujas[0].ID_USUARIO,
@@ -32,18 +48,22 @@ export default class CheckTime {
                     .catch((error) => {
                       console.error("Error al agregar carta al buzon:", error);
                     });
+                } else if (pujas[0].CREDITOS) {
+                  axios
+                    .post("/subasta/buzon/add", {
+                      IdUsuario: ID_USUARIO,
+                      creditos: pujas[0].CREDITOS,
+                    })
+                    .then(() => {
+                      axios.get(`/subasta/deleteSubasta/${ID}`);
+                    })
+                    .catch((error) => {
+                      console.error(
+                        "Error al agregar creditos al buzon:",
+                        error
+                      );
+                    });
                 }
-                axios
-                  .post("/subasta/buzon/add", {
-                    IdUsuario: ID_USUARIO,
-                    creditos: pujas[0].CREDITOS,
-                  })
-                  .then(() => {
-                    axios.get(`/subasta/deleteSubasta/${ID}`);
-                  })
-                  .catch((error) => {
-                    console.error("Error al agregar creditos al buzon:", error);
-                  });
               })
               .catch((error) => {
                 console.error("Error al agregar la carta al buzon:", error);
@@ -54,6 +74,5 @@ export default class CheckTime {
           });
       });
     }
-    console.log("Subastas finalizadas");
   }
 }

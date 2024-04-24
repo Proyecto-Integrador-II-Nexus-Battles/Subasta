@@ -6,7 +6,7 @@ import axios from "axios";
 export class SubastarController {
   static async add_subasta(req, res) {
     try {
-      const {
+      let {
         IdUsuario,
         ID_CARD,
         TIEMPO,
@@ -15,6 +15,19 @@ export class SubastarController {
         CARTAS_MAXIMAS,
         CARTAS_MINIMAS,
       } = req.body;
+
+      if (CREDITOS_MIN === undefined) {
+        CREDITOS_MIN = 0;
+      }
+      if (CREDITOS_MAX === undefined) {
+        CREDITOS_MAX = 0;
+      }
+      if (CARTAS_MAXIMAS === undefined) {
+        CARTAS_MAXIMAS = [];
+      }
+      if (CARTAS_MINIMAS === undefined) {
+        CARTAS_MINIMAS = [];
+      }
 
       const options = {
         headers: {
@@ -30,8 +43,10 @@ export class SubastarController {
       const cantidadCreditos = credits.data.CANTIDAD;
 
       if (
-        Number(credits) < 1 ||
-        (Number(credits) > 1 && Number(credits) < 3 && Number(TIEMPO) == 48)
+        Number(cantidadCreditos) < 1 ||
+        (Number(cantidadCreditos) > 1 &&
+          Number(cantidadCreditos) < 3 &&
+          Number(TIEMPO) == 48)
       ) {
         return res
           .status(309)
@@ -81,7 +96,7 @@ export class SubastarController {
     const pujar = req.query.bet;
     const { idSubasta } = req.params;
     try {
-      if(pujar==="bet"){
+      if (pujar === "bet") {
         const pujas = await obtenerPujas(idSubasta);
         return res.status(200).json(pujas);
       }
@@ -92,7 +107,6 @@ export class SubastarController {
     }
   }
 
-  
   static async deleteSubasta(req, res) {
     const { idSubasta } = req.params;
     try {
