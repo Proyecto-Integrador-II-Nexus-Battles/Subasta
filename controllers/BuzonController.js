@@ -20,7 +20,7 @@ export class BuzonController {
       if (req.body.creditos === undefined) {
         req.body.creditos = 0;
       } else if (req.body.carta === undefined) {
-        req.body.carta = "";
+        req.body.carta = [];
       }
       await BuzonModel.setData(
         req.body.IdUsuario,

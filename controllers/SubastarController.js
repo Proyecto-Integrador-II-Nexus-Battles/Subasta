@@ -16,11 +16,15 @@ export class SubastarController {
         CARTAS_MINIMAS,
       } = req.body;
 
-      if (CREDITOS_MIN === undefined) {
-        CREDITOS_MIN = 0;
+      if (CREDITOS_MIN === undefined || CREDITOS_MAX === undefined) {
+        return res
+          .status(309)
+          .json({ message: "Todos los créditos deben estar definidos." });
       }
-      if (CREDITOS_MAX === undefined) {
-        CREDITOS_MAX = 0;
+      if (CREDITOS_MIN > CREDITOS_MAX) {
+        return res.status(310).json({
+          message: "El crédito mínimo no puede ser mayor al crédito máximo.",
+        });
       }
       if (CARTAS_MAXIMAS === undefined) {
         CARTAS_MAXIMAS = [];
