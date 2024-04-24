@@ -1,47 +1,18 @@
-import { crudSubastar } from "../models/CrudSubastar.js";
+import { crudPujar } from "../models/CrudPujar.js";
 import { HOST, PORT } from "../config.js";
 import axios from "axios";
 
 export class PujarController {
   static async add_puja(req, res) {
 
-    console.log("req.body", req.body);
-    const {
-      IdUsuario,
-      cartas_max,
-      cartas_min,
-      creditos_pujados
-    } = req.body;
-
-    console.log("IdUsuario", IdUsuario);
-    console.log("cartas_max", cartas_max);
-    console.log("cartas_min", cartas_min);
-    console.log("creditos_pujados", creditos_pujados);
+    const {IdUsuario, cartas_max, cartas_min, creditos_pujados, id_subasta} = req.body;
 
     try {
-
-      return res.status(200).send({message: "Puja agregada correctamente" });
-
-      //     await crudSubastar.INSERT_CARD_SUBASTA(
-      //       ID_USUARIO,
-      //       ID_CARD,
-      //       TIEMPO,
-      //       CREDITOS_MIN,
-      //       CREDITOS_MAX,
-      //       ID_CARD_MAX,
-      //       CANTIDAD_CARD_MAX,
-      //       ID_CARD_MIN,
-      //       CANTIDAD_CARD_MIN
-      //     );
-      //     res.status(200).send("Subasta agregada correctamente");
-      //   } catch (error) {
-      //     console.error("error al guardar la subasta:", error);
-      //   }
-      // }
-
-
+      await crudPujar.INSERT_PUJA(IdUsuario, cartas_max, cartas_min, creditos_pujados, id_subasta, req.headers.authorization);
+      res.status(200).send({ message: "Puja agregada correctamente" });
     } catch (error) {
-      console.error("error al guardar al conseguir los creditos:", error);
+      console.error("error al guardar la subasta:", error);
     }
   }
 }
+
