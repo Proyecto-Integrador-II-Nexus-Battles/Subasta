@@ -4,7 +4,7 @@ import axios from "axios";
 export default class CheckTime {
   static async checkTime() {
     const rows = await pool.query(
-      "SELECT ID, ID_CARTA, ID_USUARIO FROM CARTA_SUBASTA CS WHERE TIMESTAMPDIFF(HOUR, TIEMPO_INICIO, NOW()) >= 2;"
+      "SELECT ID, ID_CARTA, ID_USUARIO FROM CARTA_SUBASTA CS WHERE TIMESTAMPDIFF(HOUR, TIEMPO_INICIO, NOW()) >= TIEMPO;"
     );
     if (rows.length > 0) {
       rows.forEach(async (row) => {
