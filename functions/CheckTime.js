@@ -54,6 +54,5 @@ export default class CheckTime {
           });
       });
     }
-    console.log("Subastas finalizadas");
   }
 }
