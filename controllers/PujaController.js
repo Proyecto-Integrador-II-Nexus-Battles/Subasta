@@ -1,46 +1,18 @@
-import { crudSubastar } from "../models/CrudSubastar.js";
+import { crudPujar } from "../models/CrudPujar.js";
 import { HOST, PORT } from "../config.js";
 import axios from "axios";
 
 export class PujarController {
   static async add_puja(req, res) {
+
+    const {IdUsuario, cartas_max, cartas_min, creditos_pujados, id_subasta} = req.body;
+
     try {
-      const {
-        ID_USUARIO,
-        
-      } = req.body;
-
-      const credits = await axios.get(
-        `${HOST}:${PORT}/inventario/get-creditos`
-      );
-
-      const cantidadCreditos = credits.data.CANTIDAD;
-
-      if (
-        Number(credits) < 1 ||
-        (Number(credits) > 1 && Number(credits) < 3 && Number(TIEMPO) == 48)
-      ) {
-        res.status(200).json({ message: "No tiene créditos suficientes" });
-      } else {
-        try {
-          await crudSubastar.INSERT_CARD_SUBASTA(
-            ID_USUARIO,
-            ID_CARD,
-            TIEMPO,
-            CREDITOS_MIN,
-            CREDITOS_MAX,
-            ID_CARD_MAX,
-            CANTIDAD_CARD_MAX,
-            ID_CARD_MIN,
-            CANTIDAD_CARD_MIN
-          );
-          res.status(200).send("Subasta agregada correctamente");
-        } catch (error) {
-          console.error("error al guardar la subasta:", error);
-        }
-      }
+      await crudPujar.INSERT_PUJA(IdUsuario, cartas_max, cartas_min, creditos_pujados, id_subasta, req.headers.authorization);
+      res.status(200).send({ message: "Puja agregada correctamente" });
     } catch (error) {
-      console.error("error al guardar al conseguir los creditos:", error);
+      console.error("error al guardar la subasta:", error);
     }
   }
 }
+
